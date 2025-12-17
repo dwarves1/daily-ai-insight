@@ -145,9 +145,10 @@ def analyze_with_gpt(article: Dict) -> Optional[Dict]:
     system_prompt = """너는 IT 전문 에디터이자 AI 트렌드 분석가다.
 주어진 AI 관련 기사를 읽고 다음 정보를 JSON 형식으로 출력하라:
 
-1. summary: 한국어로 작성된 3줄 요약 (각 줄은 완전한 문장, 배열 형태)
-2. tags: 핵심 키워드 3개 (영어 또는 한국어, 배열 형태)
-3. importance_score: 1~10점 (AI 업계 영향도 기준)
+1. title: 기사 제목을 자연스러운 한국어로 번역 (원제의 의미를 최대한 살림)
+2. summary: 한국어로 작성된 3줄 요약 (각 줄은 완전한 문장, 배열 형태)
+3. tags: 핵심 키워드 3개 (영어 또는 한국어, 배열 형태)
+4. importance_score: 1~10점 (AI 업계 영향도 기준)
 
 평가 기준:
 - 기술 혁신성: 새로운 모델, 알고리즘, 서비스 출시
@@ -156,6 +157,7 @@ def analyze_with_gpt(article: Dict) -> Optional[Dict]:
 
 JSON 형식:
 {
+  "title": "한국어로 번역된 제목",
   "summary": ["요약 문장 1", "요약 문장 2", "요약 문장 3"],
   "tags": ["태그1", "태그2", "태그3"],
   "importance_score": 8
@@ -195,7 +197,7 @@ GPT가 기사 분석: 제목, 본문, 출처를 종합적으로 평가
         analysis = json.loads(response.choices[0].message.content)
         
         # 유효성 검증
-        if not all(key in analysis for key in ['summary', 'tags', 'importance_score']):
+        if not all(key in analysis for key in ['title', 'summary', 'tags', 'importance_score']):
             logger.warning(f"Invalid analysis format for {article['title']}")
             return None
         
@@ -233,9 +235,12 @@ def select_top_articles(articles: List[Dict], limit: int = 5) -> List[Dict]:
     for article in articles:
         analysis = analyze_with_gpt(article)
         if analysis:
+            # 원본 영어 제목 보존
+            original_title = article['title']
             analyzed_articles.append({
                 **article,
-                **analysis
+                **analysis,
+                'original_title': original_title  # 원본 제목 보존
             })
     
     # 중요도 점수로 정렬하여 상위 선정
@@ -267,7 +272,7 @@ def save_to_supabase(articles: List[Dict]) -> int:
         try:
             # 데이터 준비
             data = {
-                'title': article['title'],
+                'title': article.get('title', article.get('original_title', 'Untitled')),  # GPT가 번역한 한국어 제목 사용
                 'summary': article['summary'],  # JSONB 배열
                 'tags': article['tags'],  # TEXT[] 배열
                 'original_url': article['url'],

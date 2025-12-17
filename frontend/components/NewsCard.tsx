@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { type NewsItem } from '@/lib/supabase'
 import { ExternalLink, Check } from 'lucide-react'
 
@@ -8,6 +9,8 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ item }: NewsCardProps) {
+    const [isTitleExpanded, setIsTitleExpanded] = useState(false)
+
     return (
         <article className="relative bg-gradient-card rounded-2xl p-6 sm:p-8 border border-white/10 card-hover backdrop-blur-sm">
             {/* Importance Badge */}
@@ -18,7 +21,10 @@ export default function NewsCard({ item }: NewsCardProps) {
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl sm:text-3xl font-display font-bold leading-tight mb-4 pr-20 line-clamp-2">
+            <h2
+                onClick={() => setIsTitleExpanded(!isTitleExpanded)}
+                className={`text-2xl sm:text-3xl font-display font-bold leading-tight mb-4 pr-20 cursor-pointer transition-all duration-200 hover:text-ai-accent-light ${isTitleExpanded ? '' : 'line-clamp-2'}`}
+            >
                 {item.title}
             </h2>
 

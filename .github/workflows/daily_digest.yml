@@ -1,0 +1,41 @@
+name: Daily AI News Digest
+
+on:
+  # 매일 한국 시간 오전 7시 (UTC 22:00) 실행
+  schedule:
+    - cron: '0 22 * * *'
+  
+  # 수동 실행 옵션
+  workflow_dispatch:
+
+jobs:
+  fetch-and-curate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run AI Curator Agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          cd backend
+          python agent.py
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "AI curation failed. Check the logs for details."

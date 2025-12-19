@@ -15,6 +15,7 @@ import requests
 from openai import OpenAI
 from supabase import create_client, Client
 from dateutil import parser as date_parser
+import pytz
 
 # 로깅 설정
 logging.basicConfig(
@@ -270,6 +271,16 @@ def save_to_supabase(articles: List[Dict]) -> int:
     
     for article in articles:
         try:
+            # 한국 시간대로 변환 (날짜별 분리를 위해)
+            kst = pytz.timezone('Asia/Seoul')
+            published_date_kst = article['published_date']
+            
+            # 만약 published_date가 naive datetime이면 UTC로 가정하고 KST로 변환
+            if published_date_kst.tzinfo is None:
+                published_date_kst = pytz.utc.localize(published_date_kst).astimezone(kst)
+            else:
+                published_date_kst = published_date_kst.astimezone(kst)
+            
             # 데이터 준비
             data = {
                 'title': article.get('title', article.get('original_title', 'Untitled')),  # GPT가 번역한 한국어 제목 사용
@@ -277,7 +288,7 @@ def save_to_supabase(articles: List[Dict]) -> int:
                 'tags': article['tags'],  # TEXT[] 배열
                 'original_url': article['url'],
                 'importance_score': article['importance_score'],
-                'published_at': article['published_date'].strftime('%Y-%m-%d')
+                'published_at': published_date_kst.strftime('%Y-%m-%d')  # 한국 시간 기준 날짜
             }
             
             # Upsert (URL 기준 중복 방지)

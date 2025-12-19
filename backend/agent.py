@@ -185,7 +185,7 @@ GPT가 기사 분석: 제목, 본문, 출처를 종합적으로 평가
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
